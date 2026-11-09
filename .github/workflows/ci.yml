@@ -264,7 +264,6 @@ jobs:
               print(f"::warning::{msg}")
               sys.exit(0)
 
-
           # 1. Reproduce the failure on this checkout
           code, failure_output = run_pytest()
           if code == 0:
