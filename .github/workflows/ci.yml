@@ -104,9 +104,9 @@ jobs:
           )  # strip timestamps
 
           # 3. THINK: send logs to an OpenAI-compatible LLM endpoint
-          api_url = os.environ["LLM_API_URL"]
-          api_key = os.environ["LLM_API_KEY"]
-          model = os.environ.get("LLM_MODEL") or "gpt-4o"
+          api_url = os.environ["LLM_API_URL"].strip()
+          api_key = os.environ["LLM_API_KEY"].strip()
+          model = (os.environ.get("LLM_MODEL") or "gemini-2.5-flash").strip()
 
           prompt = (
               "Analyze these GitHub Actions failure logs. "
