@@ -106,7 +106,7 @@ jobs:
           # 3. THINK: send logs to an OpenAI-compatible LLM endpoint
           api_url = os.environ["LLM_API_URL"].strip()
           api_key = os.environ["LLM_API_KEY"].strip()
-          model = (os.environ.get("LLM_MODEL") or "gemini-2.5-flash").strip()
+          model = (os.environ.get("LLM_MODEL") or "gemini-3.8-flash").strip()
 
           prompt = (
               "Analyze these GitHub Actions failure logs. "
