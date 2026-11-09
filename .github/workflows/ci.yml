@@ -150,7 +150,7 @@ jobs:
           with open("analysis.txt", "w") as f:
               f.write(analysis)
 
-          print("AI diagnosis completed successfully.")
+          print("AI diagnosis completed successfully!!.")
           EOF
 
 
