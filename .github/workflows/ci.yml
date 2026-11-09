@@ -137,6 +137,8 @@ jobs:
               },
               timeout=90,
           )
+          if not ai_resp.ok:
+              print("LLM error:", ai_resp.status_code, ai_resp.text[:1000])
           ai_resp.raise_for_status()
           analysis = ai_resp.json()["choices"][0]["message"]["content"]
 
