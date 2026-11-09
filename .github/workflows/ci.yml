@@ -37,29 +37,66 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Collect Failure Logs
-        id: logs
+      - name: Real AI Diagnosis
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+          LLM_API_URL: ${{ secrets.LLM_API_URL }}
         run: |
-          # Simulation: In a real agent, this would call the GitHub API to get the exact error
-          echo "FAILURE_LOG=AssertionError: add(2, 3) == 6 (Expected 5, got 6)" >> $GITHUB_OUTPUT
+          python - <<EOF
+          import requests
+          import os
 
-      - name: AI Analysis (Mock Agent)
-        id: ai
-        run: |
-          # Simulation: This represents sending logs to an LLM like GPT-4
-          LOG="${{ steps.logs.outputs.FAILURE_LOG }}"
-          echo "ANALYSIS=The test failed because the assertion expected 6 but the function returned 5. This is likely a typo in the test file." >> $GITHUB_OUTPUT
+          # 1. SENSE: Fetch actual logs from the failed job
+          repo = os.getenv('GITHUB_REPOSITORY')
+          run_id = os.getenv('GITHUB_RUN_ID')
+          token = os.getenv('GITHUB_TOKEN')
+          
+          # Get the list of jobs to find the 'test' job ID
+          jobs_url = f"https://api.github.com/repos/{repo}/actions/runs/{run_id}/jobs"
+          headers = {"Authorization": f"token {token}"}
+          jobs_resp = requests.get(jobs_url, headers=headers).json()
+          
+          # Find the 'test' job and get its logs
+          test_job = next(j for j in jobs_resp['jobs'] if j['name'] == 'test')
+          logs_url = test_job['logs_url'] # This is a redirect to a raw log file
+          logs_text = requests.get(logs_url, headers=headers).text
 
-      - name: Create Issue (The Action)
+          # 2. THINK: Send logs to the LLM
+          api_url = os.getenv('LLM_API_URL')
+          api_key = os.getenv('LLM_API_KEY')
+          
+          prompt = f"You are a DevOps Expert. The following GitHub Action logs show a failure. Analyze the traceback and provide a concise diagnosis and a specific fix.\n\nLOGS:\n{logs_text}"
+          
+          payload = {
+              "model": "gpt-4o", # or your specific model
+              "messages": [
+                  {"role": "system", "content": "You are a precise technical assistant. Provide only the diagnosis and the fix."},
+                  {"role": "user", "content": prompt}
+              ]
+          }
+          
+          ai_resp = requests.post(api_url, headers={"Authorization": f"Bearer {api_key}"}, json=payload).json()
+          analysis = ai_resp['choices'][0]['message']['content']
+          
+          # Save analysis to a file for the next step
+          with open("analysis.txt", "w") as f:
+              f.write(analysis)
+          EOF
+
+      - name: Create Issue from Real AI
         uses: actions/github-script@v7
         with:
           script: |
+            const fs = require('fs');
+            const analysis = fs.readFileSync('analysis.txt', 'utf8');
             github.rest.issues.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              title: "🤖 Agentic Diagnosis: Test Failure Detected",
-              body: "The CI pipeline failed. \n\n**Log:** ${{ steps.logs.outputs.FAILURE_LOG }}\n\n**Agent Analysis:** ${{ steps.ai.outputs.ANALYSIS }}\n\n**Suggested Fix:** Check the assertion logic in `test_app.py`."
+              title: "🤖 Real AI Diagnosis: Test Failure",
+              body: `**AI Analysis and Fix:**\n\n${analysis}`
             })
+
 
   deploy-staging:
     needs: test # This ensures we don't deploy broken code
