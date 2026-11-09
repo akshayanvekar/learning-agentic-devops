@@ -1,10 +1,14 @@
-name: Deterministic CI
+name: Agentic CI/CD Pipeline
 
 on:
   push:
     branches: ["main"]
   pull_request:
     branches: ["main"]
+
+permissions:
+  contents: read
+  issues: write
 
 jobs:
   test:
@@ -25,8 +29,41 @@ jobs:
       - name: Run tests
         run: python -m pytest -v
 
+
+  diagnose:
+    needs: test
+    if: failure() 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Collect Failure Logs
+        id: logs
+        run: |
+          # Simulation: In a real agent, this would call the GitHub API to get the exact error
+          echo "FAILURE_LOG=AssertionError: add(2, 3) == 6 (Expected 5, got 6)" >> $GITHUB_OUTPUT
+
+      - name: AI Analysis (Mock Agent)
+        id: ai
+        run: |
+          # Simulation: This represents sending logs to an LLM like GPT-4
+          LOG="${{ steps.logs.outputs.FAILURE_LOG }}"
+          echo "ANALYSIS=The test failed because the assertion expected 6 but the function returned 5. This is likely a typo in the test file." >> $GITHUB_OUTPUT
+
+      - name: Create Issue (The Action)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: "🤖 Agentic Diagnosis: Test Failure Detected",
+              body: "The CI pipeline failed. \n\n**Log:** ${{ steps.logs.outputs.FAILURE_LOG }}\n\n**Agent Analysis:** ${{ steps.ai.outputs.ANALYSIS }}\n\n**Suggested Fix:** Check the assertion logic in `test_app.py`."
+            })
+
   deploy-staging:
     needs: test # This ensures we don't deploy broken code
+    if: github.ref == 'refs/heads/main' && success()  # Only deploy from main if tests passed
     uses: ./.github/workflows/deployment-template.yml
     with:
       environment: staging
@@ -37,6 +74,7 @@ jobs:
   # Job 3: Deploy to Production
   deploy-prod:
     needs: deploy-staging # Must pass staging first
+    if: github.ref == 'refs/heads/main'
     uses: ./.github/workflows/deployment-template.yml
     with:
       environment: production
