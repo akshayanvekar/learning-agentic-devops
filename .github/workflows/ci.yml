@@ -10,6 +10,7 @@ permissions:
   contents: read
   issues: write
   actions: read
+  pull_request: write
 
 jobs:
   test:
@@ -46,6 +47,7 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_RUN_ID: ${{ github.run_id }}
         run: |
+          python - <<'EOF'
           python -m pip install requests
 
           python - <<'EOF'
@@ -55,7 +57,7 @@ jobs:
           repo = os.environ["GITHUB_REPOSITORY"]
           run_id = os.environ["GITHUB_RUN_ID"]
           token = os.environ["GITHUB_TOKEN"]
-
+          print("API endpoint:", repr(api_url))
           headers = {
               "Authorization": f"Bearer {token}",
               "Accept": "application/vnd.github+json",
