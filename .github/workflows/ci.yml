@@ -134,7 +134,7 @@ jobs:
           ai_resp = requests.post(
               api_url,
               headers={
-                  "Authorization": f"Bearer {api_key}",
+                  "X-goog-api-key": f"{api_key}",
                   "Content-Type": "application/json"
               },
               json=payload,
