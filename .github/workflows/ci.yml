@@ -135,7 +135,7 @@ jobs:
                       {"role": "user", "content": prompt},
                   ],
               },
-              timeout=90,
+              timeout=300,
           )
           if not ai_resp.ok:
               print("LLM error:", ai_resp.status_code, ai_resp.text[:1000])
