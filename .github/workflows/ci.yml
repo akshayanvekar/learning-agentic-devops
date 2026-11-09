@@ -27,24 +27,19 @@ jobs:
 
   deploy-staging:
     needs: test # This ensures we don't deploy broken code
-    if: github.ref == 'refs/heads/main' # Only deploy from the main branch
-    runs-on: ubuntu-latest
-    environment: staging
-    steps:
-      - name: Deploy to Staging
-        run: |
-          echo "Deploying to staging server..."
-          echo "Using API Key: ${{ secrets.MOCK_API_KEY }}" 
-          # In reality, you'd use this secret in a curl command or CLI tool
+    uses: ./.github/workflows/deployment-template.yml
+    with:
+      environment: staging
+    secrets:
+      API_KEY: ${{ secrets.MOCK_API_KEY }}
+
 
   # Job 3: Deploy to Production
   deploy-prod:
     needs: deploy-staging # Must pass staging first
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: production # This triggers the 'Required Reviewer' gate
-    steps:
-      - name: Deploy to Production
-        run: |
-          echo "Deploying to production server..."
-          echo "Production deployment complete!"
+    uses: ./.github/workflows/deployment-template.yml
+    with:
+      environment: production
+    secrets:
+      API_KEY: ${{ secrets.MOCK_API_KEY }}
+

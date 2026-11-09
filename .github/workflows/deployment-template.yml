@@ -1,0 +1,24 @@
+name: Reusable Deployment
+
+on:
+  workflow_call:
+    # Inputs allow the caller to customize the behavior
+    inputs:
+      environment:
+        required: true
+        type: string
+    # Secrets must be explicitly passed or inherited
+    secrets:
+      API_KEY:
+        required: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Execute Deployment
+        run: |
+          echo "Deploying to ${{ inputs.environment }}..."
+          echo "Using secret key: ${{ secrets.API_KEY }}"
